@@ -1,0 +1,342 @@
+openapi: 3.0.4
+info:
+  title: Scheduling and Alerting API
+  description: API for scheduling and alerting education activities with JWT authentication
+  version: 1.0.0
+
+servers:
+  - url: https://api.yourschedule.com/v1
+    description: Main API server
+tags:
+  - name: user
+    description: CRUD of user
+  - name: login
+    description: logging procces
+  - name: activity
+    description: CRUD activity
+    
+
+paths:
+  /auth/login:
+    post:
+      tags:
+        - login
+      summary: Login to get a JWT token
+      security: []  # No auth required here (public endpoint)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful, JWT token returned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    example: "your_jwt_token_here"
+
+  /activities:
+    post:
+      tags:
+        - activity
+      summary: Create a new activity
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Activity'
+      responses:
+        '201':
+          description: Activity created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseMessage'
+        '400':
+          description: Invalid input data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseMessage'
+
+    get:
+      tags:
+        - activity
+      summary: Get a list of activities
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - planned
+              - done
+              - failed
+            description: Filter by activity status
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            example: 10
+            description: Limit the number of activities returned
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            example: 0
+            description: Offset for pagination
+      responses:
+        '200':
+          description: A list of activities
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Activity'
+        '400':
+          description: Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseMessage'
+
+  /activities/{id}:
+    get:
+      tags:
+        - activity
+      summary: Get a specific activity by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: The ID of the activity
+      responses:
+        '200':
+          description: A single activity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Activity'
+        '404':
+          description: Activity not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseMessage'
+
+    put:
+      tags:
+        - activity
+      summary: Update an existing activity
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: The ID of the activity to update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Activity'
+      responses:
+        '200':
+          description: Activity updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseMessage'
+        '400':
+          description: Invalid input data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseMessage'
+        '404':
+          description: Activity not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseMessage'
+
+    delete:
+      tags:
+        - activity
+      summary: Delete an activity
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: The ID of the activity to delete
+      responses:
+        '200':
+          description: Activity deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseMessage'
+        '404':
+          description: Activity not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseMessage'
+
+  /auth/register:
+    post:
+      tags:
+        - user
+      summary: Register a new user
+      description: Allows a user to create an account by providing username, password, and email.
+      security: []  # Public access (no JWT required)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+               $ref: '#/components/schemas/User'
+      responses:
+        '201':
+          description: User successfully registered
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "User registered successfully."
+        '400':
+          description: Invalid input (e.g., missing required fields or invalid email format)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Invalid input. Please check your data."
+        '409':
+          description: User already exists (e.g., duplicate username or email)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Username or email already exists."        
+    
+        
+        
+components:
+
+  schemas:
+    Activity:
+      type: object
+      required:
+        - name
+        - deadline
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        name:
+          type: string
+          example: "Math Exam"
+        description:
+          type: string
+          example: "Final exam for Math 101"
+        deadline:
+          type: string
+          format: date-time
+          example: "2025-06-01T10:00:00Z"
+        status:
+          type: string
+          enum:
+            - done
+            - planned
+            - failed
+          example: "planned"
+        where:
+          type: string
+          example: "Room 205"
+        importance:
+          type: string
+          enum:
+            - high
+            - medium
+            - low
+          example: "high"
+
+    LoginRequest:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+          example: "john_doe"
+        password:
+          type: string
+          example: "securepassword"
+
+    ResponseMessage:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Activity created successfully"
+    
+    User:
+      type: object
+      required:
+       - username
+       - password
+       - firstname
+       - email
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 10
+        username:
+          type: string
+          example: theUser
+        firstName:
+          type: string
+          example: John
+        lastName:
+          type: string
+          example: James
+        email:
+          type: string
+          example: john@email.com
+        password:
+          type: string
+          example: '12345'
+        phone:
+          type: string
+          example: '12345'
+        userStatus:
+          type: integer
+          description: User Status
